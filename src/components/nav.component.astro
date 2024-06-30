@@ -1,0 +1,31 @@
+---
+import type { Link } from "../interfaces/link.interface";
+import LinkItem from "./link.component.astro";
+
+interface Props {
+  currentPage: string;
+}
+
+const links: Link[] = [
+  { label: "admin", href: "/" },
+  { label: "establishments", href: "/establishments" },
+  { label: "users", href: "/users" },
+  { label: "faculty", href: "/faculty" },
+];
+
+const { currentPage } = Astro.props;
+---
+
+<nav class="bg-gold">
+  <ul class="max-w-5xl mx-auto flex pb-1">
+    {
+      links.map((link) => (
+        <LinkItem
+          label={link.label}
+          href={link.href}
+          isActive={link.href === currentPage}
+        />
+      ))
+    }
+  </ul>
+</nav>

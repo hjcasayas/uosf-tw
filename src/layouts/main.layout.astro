@@ -1,0 +1,26 @@
+---
+import Header from "../components/header.component.astro";
+
+interface Props {
+  title?: string;
+  currentPage: string;
+}
+
+const { title = "Admin", currentPage } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{`${title} - USF`}</title>
+  </head>
+  <body>
+    <Header currentPage={currentPage} />
+    <main class="max-w-5xl mx-auto">
+      <slot />
+    </main>
+  </body>
+</html>

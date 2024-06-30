@@ -1,0 +1,26 @@
+---
+import type { Link } from "../interfaces/link.interface";
+import Logo from "./logo.component.astro";
+import Nav from "./nav.component.astro";
+
+interface Props {
+  currentPage: string;
+}
+
+const { currentPage } = Astro.props;
+---
+
+<header>
+  <div class="mb-12">
+    <div class="h-32 bg-green">
+      <div
+        class="h-full max-w-5xl mx-auto flex flex-row items-center justify-start"
+      >
+        <div class="w-[300px] h-[51px]">
+          <Logo />
+        </div>
+      </div>
+    </div>
+    <Nav currentPage={currentPage} />
+  </div>
+</header>
