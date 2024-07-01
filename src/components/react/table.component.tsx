@@ -3,20 +3,12 @@ import type { Establisment } from "../../interfaces/establisment.interface";
 import { PrevButton } from "./prev-button.component";
 import { NextButton } from "./next-button.component";
 import {
-  Query,
-  QuerySnapshot,
   collection,
   getDocs,
   limit,
-  orderBy,
   query,
-  startAfter,
-  startAt,
-  type DocumentData,
 } from "firebase/firestore";
 import { firestore } from "../../db/firebase/client";
-import { set } from "firebase/database";
-import { hippolabstoEstablisment } from "../../mappers/hippolabs-to-establisments.mapper";
 
 export const Table = () => {
   const initialDataCountPerPage = 10;
@@ -76,7 +68,12 @@ export const Table = () => {
         setIsloading(false);
       } catch (error) {
         console.log({ error });
+        setTableData([]);
         setEstablisments([]);
+        setDataCountPerPage(initialDataCountPerPage);
+        setCurrentPageNumber(initialCurrentPageNumber);
+        setPageNumbers([]);
+        setCountPages(initialCountPages);
         setIsloading(false);
       }
     };
@@ -218,14 +215,24 @@ export const Table = () => {
 
       if (establishments != null && establishments.length > 0) {
         setEstablisments(establishments);
+        let countPerPage = establishments.length;
+        if (establishments.length >= 5) {
+          countPerPage = 5;
+        }
+        if (establishments.length >= 10) {
+          countPerPage = 10;
+        }
+        if (establishments.length >= 15) {
+          countPerPage = 15;
+        }
+        if (establishments.length >= 20) {
+          countPerPage = 20;
+        }
         const countPages =
-          Math.ceil(establishments.length / dataCountPerPage) <= 0
+          Math.ceil(establishments.length / countPerPage) <= 0
             ? 1
-            : Math.ceil(establishments.length / dataCountPerPage);
-        const pageNumber =
-          countPages < dataCountPerPage ? countPages : currentPageNumber;
-        const countPerPage =
-          countPages < dataCountPerPage ? countPages : dataCountPerPage;
+            : Math.ceil(establishments.length / countPerPage);
+        const pageNumber = 1;
         setCurrentPageNumber(pageNumber);
         setDataCountPerPage(countPerPage);
         setCountPages(countPages);
@@ -244,13 +251,24 @@ export const Table = () => {
           tableData.push(establishments[index]);
         }
         setTableData(tableData);
+        console.log({ tableData });
       } else {
         setTableData([]);
+        setEstablisments([]);
+        setDataCountPerPage(initialDataCountPerPage);
+        setCurrentPageNumber(initialCurrentPageNumber);
+        setPageNumbers([]);
+        setCountPages(initialCountPages);
       }
       setIsloading(false);
     } catch (error) {
       console.log({ error });
       setTableData([]);
+      setEstablisments([]);
+      setDataCountPerPage(initialDataCountPerPage);
+      setCurrentPageNumber(initialCurrentPageNumber);
+      setPageNumbers([]);
+      setCountPages(initialCountPages);
       setIsloading(false);
     }
   };
@@ -361,20 +379,22 @@ export const Table = () => {
             </thead>
             <tbody>
               {tableData != null && tableData.length > 0
-                ? tableData.map((establishment, index) => (
-                    <tr
-                      key={`${establishment.name}${establishment.country}${
-                        establishment.classification
-                      }${Math.random()}`}
-                      className="even:!bg-gold"
-                    >
-                      <td>{index + 1}</td>
-                      <td>{establishment.name}</td>
-                      <td>{establishment.country}</td>
-                      <td>{establishment.classification}</td>
-                      <td>{establishment.parent || ""}</td>
-                    </tr>
-                  ))
+                ? tableData
+                    .filter((d) => d != null)
+                    .map((establishment, index) => (
+                      <tr
+                        key={`${establishment.name}${establishment.country}${
+                          establishment.classification
+                        }${Math.random()}`}
+                        className="even:!bg-gold"
+                      >
+                        <td>{index + 1}</td>
+                        <td>{establishment.name}</td>
+                        <td>{establishment.country}</td>
+                        <td>{establishment.classification}</td>
+                        <td>{establishment.parent || ""}</td>
+                      </tr>
+                    ))
                 : null}
             </tbody>
           </table>

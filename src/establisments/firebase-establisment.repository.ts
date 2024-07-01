@@ -1,4 +1,3 @@
-import { limit, query } from "firebase/firestore";
 import type { Establisment } from "../interfaces/establisment.interface";
 import type { IEstablishmentRepository } from "../interfaces/repositories/establisment-repository.interface";
 import type { Firestore } from "firebase-admin/firestore";
