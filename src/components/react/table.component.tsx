@@ -37,24 +37,21 @@ export const Table = () => {
   useEffect(() => {
     const getEstablishments = async () => {
       try {
-        const data = await fetch("http://universities.hipolabs.com/search");
-        const universities = (await data.json()) as HippolabsDTO[];
-        const establishments: Establisment[] = universities.map((university) =>
-          hippolabstoEstablisment(university)
-        );
-        // const q = query(
-        //   collection(firestore, "establisments"),
-        //   orderBy("country")
+        // const data = await fetch("http://universities.hipolabs.com/search");
+        // const universities = (await data.json()) as HippolabsDTO[];
+        // const establishments: Establisment[] = universities.map((university) =>
+        //   hippolabstoEstablisment(university)
         // );
-        // const querySnapshot = await getDocs(q);
+        const q = query(collection(firestore, "establisments"), limit(30));
+        const querySnapshot = await getDocs(q);
 
-        // const establishments: Establisment[] = [];
-        // querySnapshot.forEach((doc) => {
-        //   establishments.push({ id: doc.id, ...doc.data() } as Establisment);
-        // });
+        const establishments: Establisment[] = [];
+        querySnapshot.forEach((doc) => {
+          establishments.push({ id: doc.id, ...doc.data() } as Establisment);
+        });
 
         setEstablisments(establishments);
-        const countPages = Math.floor(
+        const countPages = Math.ceil(
           establishments.length / initialDataCountPerPage
         );
         setCountPages(countPages);
@@ -88,11 +85,13 @@ export const Table = () => {
     setCurrentPageNumber((prev) => {
       const currentPageNumber = prev + 1 > countPages ? countPages : prev + 1;
       const tableData = [];
-      for (
-        let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
-        index < currentPageNumber * dataCountPerPage;
-        index++
-      ) {
+
+      const from = currentPageNumber * dataCountPerPage - dataCountPerPage;
+      const to =
+        currentPageNumber * dataCountPerPage > establishments.length
+          ? establishments.length
+          : currentPageNumber * dataCountPerPage;
+      for (let index = from; index < to; index++) {
         tableData.push(establishments[index]);
       }
 
@@ -107,11 +106,13 @@ export const Table = () => {
       const currentPageNumber = prev - 1 < 1 ? 1 : prev - 1;
 
       const tableData = [];
-      for (
-        let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
-        index < currentPageNumber * dataCountPerPage;
-        index++
-      ) {
+
+      const from = currentPageNumber * dataCountPerPage - dataCountPerPage;
+      const to =
+        currentPageNumber * dataCountPerPage > establishments.length
+          ? establishments.length
+          : currentPageNumber * dataCountPerPage;
+      for (let index = from; index < to; index++) {
         tableData.push(establishments[index]);
       }
 
@@ -123,7 +124,7 @@ export const Table = () => {
 
   const handlePerPageClick = (dataCountPerPage: number) => {
     setDataCountPerPage(() => {
-      const countPages = Math.floor(establishments.length / dataCountPerPage);
+      const countPages = Math.ceil(establishments.length / dataCountPerPage);
 
       setCountPages(countPages);
 
@@ -143,11 +144,13 @@ export const Table = () => {
 
         const tableData = [];
 
-        for (
-          let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
-          index < currentPageNumber * dataCountPerPage;
-          index++
-        ) {
+        const from = currentPageNumber * dataCountPerPage - dataCountPerPage;
+        const to =
+          currentPageNumber * dataCountPerPage > establishments.length
+            ? establishments.length
+            : currentPageNumber * dataCountPerPage;
+
+        for (let index = from; index < to; index++) {
           tableData.push(establishments[index]);
         }
 
@@ -163,11 +166,14 @@ export const Table = () => {
   const handleCurrentPageNumber = (currentPageNumber: number) => {
     setCurrentPageNumber(() => {
       const tableData = [];
-      for (
-        let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
-        index < currentPageNumber * dataCountPerPage;
-        index++
-      ) {
+
+      const from = currentPageNumber * dataCountPerPage - dataCountPerPage;
+      const to =
+        currentPageNumber * dataCountPerPage > establishments.length
+          ? establishments.length
+          : currentPageNumber * dataCountPerPage;
+
+      for (let index = from; index < to; index++) {
         tableData.push(establishments[index]);
       }
 
@@ -181,29 +187,36 @@ export const Table = () => {
     HTMLButtonElement
   > = async () => {
     try {
-      const data = await fetch(
-        "http://universities.hipolabs.com/search?name=" + search
-      );
-      const universities = (await data.json()) as HippolabsDTO[];
-      const establishments: Establisment[] = universities.map((university) =>
-        hippolabstoEstablisment(university)
-      );
-      // const q = query(
-      //   collection(firestore, "establisments"),
-      //   orderBy("country")
+      // const data = await fetch(
+      //   "http://universities.hipolabs.com/search?name=" + search
       // );
-      // const querySnapshot = await getDocs(q);
+      // const universities = (await data.json()) as HippolabsDTO[];
+      // const establishments: Establisment[] = universities.map((university) =>
+      //   hippolabstoEstablisment(university)
+      // );
+      const q = query(collection(firestore, "establisments"), limit(30));
+      const querySnapshot = await getDocs(q);
 
-      // const establishments: Establisment[] = [];
-      // querySnapshot.forEach((doc) => {
-      //   establishments.push({ id: doc.id, ...doc.data() } as Establisment);
-      // });
+      let establishments: Establisment[] = [];
+      querySnapshot.forEach((doc) => {
+        establishments.push({ id: doc.id, ...doc.data() } as Establisment);
+      });
+
+      if (search.trim() !== "") {
+        establishments = establishments.filter((e) =>
+          e.name
+            .toLowerCase()
+            .split(" ")
+            .join("")
+            .includes(search.toLowerCase().split(" ").join())
+        );
+      }
 
       setEstablisments(establishments);
       const countPages =
-        Math.floor(establishments.length / dataCountPerPage) <= 0
+        Math.ceil(establishments.length / dataCountPerPage) <= 0
           ? 1
-          : Math.floor(establishments.length / dataCountPerPage);
+          : Math.ceil(establishments.length / dataCountPerPage);
       const pageNumber =
         countPages < dataCountPerPage ? countPages : currentPageNumber;
       const countPerPage =
@@ -309,7 +322,7 @@ export const Table = () => {
                 className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full p-2 shadow"
               >
                 {[5, 10, 15, 20].map((num) =>
-                  num < countPages ? (
+                  num < establishments.length ? (
                     <li key={num}>
                       <a onClick={() => handlePerPageClick(num)}>{num}</a>
                     </li>
