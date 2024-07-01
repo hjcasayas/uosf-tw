@@ -33,7 +33,7 @@ export const Table = () => {
   const [pageNumbers, setPageNumbers] = useState<number[]>([]);
   const [countPages, setCountPages] = useState(initialCountPages);
   const [search, setSearch] = useState("");
-  const [isLoading, setIsloading] = useState(false);
+  const [isLoading, setIsloading] = useState(true);
 
   useEffect(() => {
     const getEstablishments = async () => {
@@ -43,7 +43,6 @@ export const Table = () => {
         // const establishments: Establisment[] = universities.map((university) =>
         //   hippolabstoEstablisment(university)
         // );
-        setIsloading(true);
         const q = query(collection(firestore, "establisments"), limit(30));
         const querySnapshot = await getDocs(q);
 
