@@ -1,42 +1,10 @@
 ---
+import { Table } from "../components/react/table.component.tsx";
 import MainLayout from "../layouts/main.layout.astro";
 ---
 
 <MainLayout title="Establishments" currentPage="/establishments">
   <div>
-    <h2 class="uppercase text-green text-center text-3xl mb-8">
-      find an establisment
-    </h2>
-    <div class="relative mt-2 rounded-md shadow-sm flex flex-row">
-      <input
-        type="text"
-        name="keyword"
-        id="keyword"
-        class="block w-full rounded-md border-0 py-1.5 pl-7 pr-20 text-gray-900 ring-1 ring-inset ring-gold placeholder:text-gray-400  sm:text-sm sm:leading-6"
-        placeholder="Filter by keyword"
-      />
-      <span class="sm:ml-3">
-        <button
-          type="button"
-          class="inline-flex items-center rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green hover:opacity-95"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            x="0px"
-            y="0px"
-            width="100"
-            height="100"
-            viewBox="0 0 50 50"
-            fill="currentColor"
-            class="ml-0.5 mr-1.5 h-5 w-5 text-white"
-          >
-            <path
-              d="M 21 3 C 11.621094 3 4 10.621094 4 20 C 4 29.378906 11.621094 37 21 37 C 24.710938 37 28.140625 35.804688 30.9375 33.78125 L 44.09375 46.90625 L 46.90625 44.09375 L 33.90625 31.0625 C 36.460938 28.085938 38 24.222656 38 20 C 38 10.621094 30.378906 3 21 3 Z M 21 5 C 29.296875 5 36 11.703125 36 20 C 36 28.296875 29.296875 35 21 35 C 12.703125 35 6 28.296875 6 20 C 6 11.703125 12.703125 5 21 5 Z"
-            ></path>
-          </svg>
-          Search
-        </button>
-      </span>
-    </div>
+    <Table client:load />
   </div>
 </MainLayout>

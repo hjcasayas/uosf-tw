@@ -1,0 +1,355 @@
+import { useEffect, useState } from "react";
+import type { Establisment } from "../../interfaces/establisment.interface";
+import { PrevButton } from "./prev-button.component";
+import { NextButton } from "./next-button.component";
+import {
+  Query,
+  QuerySnapshot,
+  collection,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+  startAt,
+  type DocumentData,
+} from "firebase/firestore";
+import { firestore } from "../../db/firebase/client";
+import { set } from "firebase/database";
+import { hippolabstoEstablisment } from "../../mappers/hippolabs-to-establisments.mapper";
+
+export const Table = () => {
+  const initialDataCountPerPage = 10;
+  const initialCurrentPageNumber = 1;
+  const initialCountPages = 0;
+  const [establishments, setEstablisments] = useState<Establisment[]>([]);
+  const [tableData, setTableData] = useState<Establisment[]>();
+  const [dataCountPerPage, setDataCountPerPage] = useState(
+    initialDataCountPerPage
+  );
+  const [currentPageNumber, setCurrentPageNumber] = useState(
+    initialCurrentPageNumber
+  );
+  const [pageNumbers, setPageNumbers] = useState<number[]>([]);
+  const [countPages, setCountPages] = useState(initialCountPages);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const getEstablishments = async () => {
+      try {
+        const data = await fetch("http://universities.hipolabs.com/search");
+        const universities = (await data.json()) as HippolabsDTO[];
+        const establishments: Establisment[] = universities.map((university) =>
+          hippolabstoEstablisment(university)
+        );
+        // const q = query(
+        //   collection(firestore, "establisments"),
+        //   orderBy("country")
+        // );
+        // const querySnapshot = await getDocs(q);
+
+        // const establishments: Establisment[] = [];
+        // querySnapshot.forEach((doc) => {
+        //   establishments.push({ id: doc.id, ...doc.data() } as Establisment);
+        // });
+
+        setEstablisments(establishments);
+        const countPages = Math.floor(
+          establishments.length / initialDataCountPerPage
+        );
+        setCountPages(countPages);
+        const arrayOfNumbers: number[] = [];
+        for (let index = 0; index < countPages; index++) {
+          arrayOfNumbers.push(index + 1);
+        }
+        setPageNumbers(arrayOfNumbers);
+
+        const tableData = [];
+        for (
+          let index =
+            initialCurrentPageNumber * initialDataCountPerPage -
+            initialDataCountPerPage;
+          index < initialCurrentPageNumber * initialDataCountPerPage;
+          index++
+        ) {
+          tableData.push(establishments[index]);
+        }
+        setTableData(tableData);
+      } catch (error) {
+        console.log({ error });
+        setEstablisments([]);
+      }
+    };
+
+    getEstablishments();
+  }, []);
+
+  const handleNextClick = () => {
+    setCurrentPageNumber((prev) => {
+      const currentPageNumber = prev + 1 > countPages ? countPages : prev + 1;
+      const tableData = [];
+      for (
+        let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
+        index < currentPageNumber * dataCountPerPage;
+        index++
+      ) {
+        tableData.push(establishments[index]);
+      }
+
+      setTableData(tableData);
+
+      return currentPageNumber;
+    });
+  };
+
+  const handlePrevClick = async () => {
+    setCurrentPageNumber((prev) => {
+      const currentPageNumber = prev - 1 < 1 ? 1 : prev - 1;
+
+      const tableData = [];
+      for (
+        let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
+        index < currentPageNumber * dataCountPerPage;
+        index++
+      ) {
+        tableData.push(establishments[index]);
+      }
+
+      setTableData(tableData);
+
+      return currentPageNumber;
+    });
+  };
+
+  const handlePerPageClick = (dataCountPerPage: number) => {
+    setDataCountPerPage(() => {
+      const countPages = Math.floor(establishments.length / dataCountPerPage);
+
+      setCountPages(countPages);
+
+      const arrayOfNumbers: number[] = [];
+      for (let index = 0; index < countPages; index++) {
+        arrayOfNumbers.push(index + 1);
+      }
+      setPageNumbers(arrayOfNumbers);
+
+      setCurrentPageNumber((prevCurrentPageNumber) => {
+        let currentPageNumber: number;
+        if (countPages < prevCurrentPageNumber) {
+          currentPageNumber = countPages;
+        } else {
+          currentPageNumber = prevCurrentPageNumber;
+        }
+
+        const tableData = [];
+
+        for (
+          let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
+          index < currentPageNumber * dataCountPerPage;
+          index++
+        ) {
+          tableData.push(establishments[index]);
+        }
+
+        setTableData(tableData);
+
+        return currentPageNumber;
+      });
+
+      return dataCountPerPage;
+    });
+  };
+
+  const handleCurrentPageNumber = (currentPageNumber: number) => {
+    setCurrentPageNumber(() => {
+      const tableData = [];
+      for (
+        let index = currentPageNumber * dataCountPerPage - dataCountPerPage;
+        index < currentPageNumber * dataCountPerPage;
+        index++
+      ) {
+        tableData.push(establishments[index]);
+      }
+
+      setTableData(tableData);
+
+      return currentPageNumber;
+    });
+  };
+
+  const handleSearchButton: React.MouseEventHandler<
+    HTMLButtonElement
+  > = async () => {
+    try {
+      const data = await fetch(
+        "http://universities.hipolabs.com/search?name=" + search
+      );
+      const universities = (await data.json()) as HippolabsDTO[];
+      const establishments: Establisment[] = universities.map((university) =>
+        hippolabstoEstablisment(university)
+      );
+      // const q = query(
+      //   collection(firestore, "establisments"),
+      //   orderBy("country")
+      // );
+      // const querySnapshot = await getDocs(q);
+
+      // const establishments: Establisment[] = [];
+      // querySnapshot.forEach((doc) => {
+      //   establishments.push({ id: doc.id, ...doc.data() } as Establisment);
+      // });
+
+      setEstablisments(establishments);
+      const countPages =
+        Math.floor(establishments.length / dataCountPerPage) <= 0
+          ? 1
+          : Math.floor(establishments.length / dataCountPerPage);
+      const pageNumber =
+        countPages < dataCountPerPage ? countPages : currentPageNumber;
+      const countPerPage =
+        countPages < dataCountPerPage ? countPages : dataCountPerPage;
+      setCurrentPageNumber(pageNumber);
+      setDataCountPerPage(countPerPage);
+      setCountPages(countPages);
+      const arrayOfNumbers: number[] = [];
+      for (let index = 0; index < countPages; index++) {
+        arrayOfNumbers.push(index + 1);
+      }
+      setPageNumbers(arrayOfNumbers);
+
+      const tableData = [];
+      for (
+        let index = pageNumber * countPerPage - countPerPage;
+        index < pageNumber * countPerPage;
+        index++
+      ) {
+        tableData.push(establishments[index]);
+      }
+      setTableData(tableData);
+    } catch (error) {
+      console.log({ error });
+    }
+  };
+
+  const handleInputChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const value = e.currentTarget.value;
+    setSearch(value);
+  };
+
+  return (
+    <>
+      <h2 className="uppercase text-green text-center text-3xl mb-8">
+        find an establisment
+      </h2>
+      <div className="flex flex-row gap-4 mb-8">
+        <label className="input input-bordered flex items-center gap-2 flex-1">
+          <input
+            onChange={handleInputChange}
+            type="text"
+            className="grow"
+            placeholder="Search"
+          />
+        </label>
+        <button
+          onClick={handleSearchButton}
+          className="btn bg-green text-white"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            className="h-4 w-4 opacity-70"
+          >
+            <path
+              fillRule="evenodd"
+              d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
+              clipRule="evenodd"
+            ></path>
+          </svg>
+          Search
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <div className="flex flex-row justify-between items-center mb-4">
+          <PrevButton onClick={handlePrevClick} />
+          <div>
+            <span>Page</span>
+            <div className="dropdown dropdown-bottom ">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn m-1 bg-green text-white"
+              >
+                {currentPageNumber}
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] p-2 max-h-96 shadow flex flex-column flex-nowrap overflow-y-scroll"
+              >
+                {pageNumbers.map((num) => (
+                  <li onClick={() => handleCurrentPageNumber(num)} key={num}>
+                    <a>{num}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <span>of {countPages}</span>
+          </div>
+          <div>
+            <div className="dropdown dropdown-bottom">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn m-1 bg-green text-white"
+              >
+                Show {dataCountPerPage} results per page
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full p-2 shadow"
+              >
+                {[5, 10, 15, 20].map((num) =>
+                  num < countPages ? (
+                    <li key={num}>
+                      <a onClick={() => handlePerPageClick(num)}>{num}</a>
+                    </li>
+                  ) : null
+                )}
+              </ul>
+            </div>
+          </div>
+          <NextButton onClick={handleNextClick} />
+        </div>
+        <table className="table table-zebra">
+          <thead className="bg-green text-white">
+            <tr>
+              <th></th>
+              <th>Name</th>
+              <th>Country</th>
+              <th>Classification</th>
+              <th>Parents</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData != null && tableData.length > 0
+              ? tableData.map((establishment, index) => (
+                  <tr
+                    key={`${establishment.name}${establishment.country}${
+                      establishment.classification
+                    }${Math.random()}`}
+                    className="even:!bg-gold"
+                  >
+                    <td>{index + 1}</td>
+                    <td>{establishment.name}</td>
+                    <td>{establishment.country}</td>
+                    <td>{establishment.classification}</td>
+                    <td>{establishment.parent || ""}</td>
+                  </tr>
+                ))
+              : null}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+};
