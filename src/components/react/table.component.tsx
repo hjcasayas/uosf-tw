@@ -33,6 +33,7 @@ export const Table = () => {
   const [pageNumbers, setPageNumbers] = useState<number[]>([]);
   const [countPages, setCountPages] = useState(initialCountPages);
   const [search, setSearch] = useState("");
+  const [isLoading, setIsloading] = useState(false);
 
   useEffect(() => {
     const getEstablishments = async () => {
@@ -42,6 +43,7 @@ export const Table = () => {
         // const establishments: Establisment[] = universities.map((university) =>
         //   hippolabstoEstablisment(university)
         // );
+        setIsloading(true);
         const q = query(collection(firestore, "establisments"), limit(30));
         const querySnapshot = await getDocs(q);
 
@@ -72,9 +74,11 @@ export const Table = () => {
           tableData.push(establishments[index]);
         }
         setTableData(tableData);
+        setIsloading(false);
       } catch (error) {
         console.log({ error });
         setEstablisments([]);
+        setIsloading(false);
       }
     };
 
@@ -194,6 +198,7 @@ export const Table = () => {
       // const establishments: Establisment[] = universities.map((university) =>
       //   hippolabstoEstablisment(university)
       // );
+      setIsloading(true);
       const q = query(collection(firestore, "establisments"), limit(30));
       const querySnapshot = await getDocs(q);
 
@@ -212,35 +217,42 @@ export const Table = () => {
         );
       }
 
-      setEstablisments(establishments);
-      const countPages =
-        Math.ceil(establishments.length / dataCountPerPage) <= 0
-          ? 1
-          : Math.ceil(establishments.length / dataCountPerPage);
-      const pageNumber =
-        countPages < dataCountPerPage ? countPages : currentPageNumber;
-      const countPerPage =
-        countPages < dataCountPerPage ? countPages : dataCountPerPage;
-      setCurrentPageNumber(pageNumber);
-      setDataCountPerPage(countPerPage);
-      setCountPages(countPages);
-      const arrayOfNumbers: number[] = [];
-      for (let index = 0; index < countPages; index++) {
-        arrayOfNumbers.push(index + 1);
-      }
-      setPageNumbers(arrayOfNumbers);
+      if (establishments != null && establishments.length > 0) {
+        setEstablisments(establishments);
+        const countPages =
+          Math.ceil(establishments.length / dataCountPerPage) <= 0
+            ? 1
+            : Math.ceil(establishments.length / dataCountPerPage);
+        const pageNumber =
+          countPages < dataCountPerPage ? countPages : currentPageNumber;
+        const countPerPage =
+          countPages < dataCountPerPage ? countPages : dataCountPerPage;
+        setCurrentPageNumber(pageNumber);
+        setDataCountPerPage(countPerPage);
+        setCountPages(countPages);
+        const arrayOfNumbers: number[] = [];
+        for (let index = 0; index < countPages; index++) {
+          arrayOfNumbers.push(index + 1);
+        }
+        setPageNumbers(arrayOfNumbers);
 
-      const tableData = [];
-      for (
-        let index = pageNumber * countPerPage - countPerPage;
-        index < pageNumber * countPerPage;
-        index++
-      ) {
-        tableData.push(establishments[index]);
+        const tableData = [];
+        for (
+          let index = pageNumber * countPerPage - countPerPage;
+          index < pageNumber * countPerPage;
+          index++
+        ) {
+          tableData.push(establishments[index]);
+        }
+        setTableData(tableData);
+      } else {
+        setTableData([]);
       }
-      setTableData(tableData);
+      setIsloading(false);
     } catch (error) {
       console.log({ error });
+      setTableData([]);
+      setIsloading(false);
     }
   };
 
@@ -282,87 +294,97 @@ export const Table = () => {
           Search
         </button>
       </div>
-      <div className="overflow-x-auto">
-        <div className="flex flex-row justify-between items-center mb-4">
-          <PrevButton onClick={handlePrevClick} />
-          <div>
-            <span>Page</span>
-            <div className="dropdown dropdown-bottom ">
-              <div
-                tabIndex={0}
-                role="button"
-                className="btn m-1 bg-green text-white"
-              >
-                {currentPageNumber}
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu bg-base-100 rounded-box z-[1] p-2 max-h-96 shadow flex flex-column flex-nowrap overflow-y-scroll"
-              >
-                {pageNumbers.map((num) => (
-                  <li onClick={() => handleCurrentPageNumber(num)} key={num}>
-                    <a>{num}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <span>of {countPages}</span>
-          </div>
-          <div>
-            <div className="dropdown dropdown-bottom">
-              <div
-                tabIndex={0}
-                role="button"
-                className="btn m-1 bg-green text-white"
-              >
-                Show {dataCountPerPage} results per page
-              </div>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full p-2 shadow"
-              >
-                {[5, 10, 15, 20].map((num) =>
-                  num < establishments.length ? (
-                    <li key={num}>
-                      <a onClick={() => handlePerPageClick(num)}>{num}</a>
-                    </li>
-                  ) : null
-                )}
-              </ul>
-            </div>
-          </div>
-          <NextButton onClick={handleNextClick} />
+      {isLoading ? (
+        <div className="w-full flex justify-center items-center">
+          <span className="loading loading-spinner loading-lg"></span>
         </div>
-        <table className="table table-zebra">
-          <thead className="bg-green text-white">
-            <tr>
-              <th></th>
-              <th>Name</th>
-              <th>Country</th>
-              <th>Classification</th>
-              <th>Parents</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableData != null && tableData.length > 0
-              ? tableData.map((establishment, index) => (
-                  <tr
-                    key={`${establishment.name}${establishment.country}${
-                      establishment.classification
-                    }${Math.random()}`}
-                    className="even:!bg-gold"
-                  >
-                    <td>{index + 1}</td>
-                    <td>{establishment.name}</td>
-                    <td>{establishment.country}</td>
-                    <td>{establishment.classification}</td>
-                    <td>{establishment.parent || ""}</td>
-                  </tr>
-                ))
-              : null}
-          </tbody>
-        </table>
-      </div>
+      ) : tableData != null && tableData.length > 0 ? (
+        <div className="overflow-x-auto">
+          <div className="flex flex-row justify-between items-center mb-4">
+            <PrevButton onClick={handlePrevClick} />
+            <div>
+              <span>Page</span>
+              <div className="dropdown dropdown-bottom ">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn m-1 bg-green text-white"
+                >
+                  {currentPageNumber}
+                </div>
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu bg-base-100 rounded-box z-[1] p-2 max-h-96 shadow flex flex-column flex-nowrap overflow-y-scroll"
+                >
+                  {pageNumbers.map((num) => (
+                    <li onClick={() => handleCurrentPageNumber(num)} key={num}>
+                      <a>{num}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <span>of {countPages}</span>
+            </div>
+            <div>
+              <div className="dropdown dropdown-bottom">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn m-1 bg-green text-white"
+                >
+                  Show {dataCountPerPage} results per page
+                </div>
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu bg-base-100 rounded-box z-[1] w-full p-2 shadow"
+                >
+                  {[5, 10, 15, 20].map((num) =>
+                    num < establishments.length ? (
+                      <li key={num}>
+                        <a onClick={() => handlePerPageClick(num)}>{num}</a>
+                      </li>
+                    ) : null
+                  )}
+                </ul>
+              </div>
+            </div>
+            <NextButton onClick={handleNextClick} />
+          </div>
+          <table className="table table-zebra">
+            <thead className="bg-green text-white">
+              <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Country</th>
+                <th>Classification</th>
+                <th>Parents</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableData != null && tableData.length > 0
+                ? tableData.map((establishment, index) => (
+                    <tr
+                      key={`${establishment.name}${establishment.country}${
+                        establishment.classification
+                      }${Math.random()}`}
+                      className="even:!bg-gold"
+                    >
+                      <td>{index + 1}</td>
+                      <td>{establishment.name}</td>
+                      <td>{establishment.country}</td>
+                      <td>{establishment.classification}</td>
+                      <td>{establishment.parent || ""}</td>
+                    </tr>
+                  ))
+                : null}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="w-full flex justify-center items-center">
+          <p className="text-4xl text-gold">No Results Found</p>
+        </div>
+      )}
     </>
   );
 };
